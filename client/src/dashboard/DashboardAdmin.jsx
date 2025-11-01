@@ -8,7 +8,8 @@ import {
   DollarSign,
   Menu as MenuIcon,
   LogOut,
-  Edit
+  Edit,
+  Trash  
 } from 'lucide-react';
 import Menu from '../component/menu'; // ton composant Menu importé
 
@@ -55,6 +56,16 @@ const editServeur = async (id, updatedData) => {
     console.error(error);
   }
 };
+ const deleteServeur = async (id) => {
+    if (window.confirm('Voulez-vous vraiment supprimer ce serveur ?')) {
+      try {
+        await axios.delete(`http://localhost:3000/serveur/${id}`);
+        setServeurs((prev) => prev.filter((s) => s.id !== id));
+      } catch (error) {
+        console.error('Erreur lors de la suppression du serveur:', error);
+      }
+    }
+  };
 
 const editCarre = async (id, updatedData) => {
   try {
@@ -79,7 +90,7 @@ const editCuisinier = async (id, updatedData) => {
        console.error('ID invalide pour le cuisinier:', id);
       return;
     }
-    const res = await axios.put(`http://localhost:3000/cuisiniers/${_id}`, updatedData);
+    const res = await axios.put(`http://localhost:3000/cuisinier/${_id}`, updatedData);
     setCuisiniers((prev) =>
       prev.map((c) => (c.id === id ? res.data : c))
     );
@@ -87,6 +98,16 @@ const editCuisinier = async (id, updatedData) => {
     console.error(error);
   }
 };
+  const deleteCuisinier = async (id) => {
+    if (window.confirm('Voulez-vous vraiment supprimer ce cuisinier ?')) {
+      try {
+        await axios.delete(`http://localhost:3000/cuisinier/${id}`);
+        setCuisiniers((prev) => prev.filter((c) => c.id !== id));
+      } catch (error) {
+        console.error('Erreur lors de la suppression du cuisinier:', error);
+      }
+    }
+  };
 
 const fetchServeurs = async () => {
   try {
@@ -122,7 +143,7 @@ const fetchServeurs = async () => {
 
   const fetchCuisiniers = async () => {
     try {
-      const res = await axios.get('http://localhost:3000/cuisiniers');
+      const res = await axios.get('http://localhost:3000/cuisinier');
       setCuisiniers(res.data);
     } catch (error) {
       console.error(error);
@@ -177,7 +198,7 @@ const fetchServeurs = async () => {
       return;
     }
     try {
-      const res = await axios.post('http://localhost:3000/cuisiniers', formData);
+      const res = await axios.post('http://localhost:3000/cuisinier', formData);
       setCuisiniers((prev) => [...prev, res.data]); // ajout dans la bonne liste
       setShowModal(false);
       setFormData({});
@@ -276,6 +297,7 @@ const handleSubmit = (e) => {
               <td>{s.id}</td>
               <td>{s.nom}</td>
               <td>{s.email}</td>
+              <td>{s.codeUnique}</td>
               <td className="text-right font-medium">
                 {s.chiffreAffaires?.toFixed(2) || '0.00'} TND
               </td>
@@ -290,6 +312,12 @@ const handleSubmit = (e) => {
                 >
                   <Edit size={16} />
                 </button>
+                 <button
+                      onClick={() => deleteServeur(s.id)}
+                      className="text-red-600 hover:text-red-800"
+                    >
+                      <Trash   size={16} />
+                  </button>
               </td>
             </tr>
           ))}
@@ -360,6 +388,7 @@ const handleSubmit = (e) => {
                   <td>{c.id}</td>
                   <td>{c.nom}</td>
                   <td>{c.email}</td>
+                  <td> {c.codeUnique}</td>
                   <td>
                     <button
                       onClick={() => {
@@ -370,6 +399,12 @@ const handleSubmit = (e) => {
                       className="text-blue-600 hover:text-blue-800"
                     >
                      <Edit size={16} />
+                    </button>
+                     <button
+                      onClick={() => deleteCuisinier(c.id)}
+                      className="text-red-600 hover:text-red-800"
+                    >
+                      <Trash   size={16} />
                     </button>
                   </td>
                 </tr>

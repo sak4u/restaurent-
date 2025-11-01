@@ -199,5 +199,35 @@ export class ServeurService {
       },
     });
   }
+
+
+
+   async forgetCodeUnique(email: string) {
+    const serveur = await this.prisma.serveur.findUnique({ where: { email } });
+    if (!serveur) {
+      throw new Error('Serveur non trouvé avec cet email');
+    }
+
+     const transporter = createTransport({
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false,
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASSWORD,
+    },
+  });
+
+  // Prépare le mail
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: serveur.email,
+    subject: 'Récupération de votre code unique',
+    text: `Bonjour ${serveur.nom},\n\nVotre code unique est : ${serveur.codeUnique}\n\nConservez-le précieusement.\n\nL'équipe Restaurant.`,
+  };
+  
+   await transporter.sendMail(mailOptions);
+  return { message: 'Votre code unique a été renvoyé à votre adresse email.' };
+  }
     
 }

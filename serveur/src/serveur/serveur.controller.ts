@@ -1,7 +1,7 @@
 import { Controller, Post, Body ,Get,Put , Param} from '@nestjs/common';
 import { ServeurService } from './serveur.service';
 import { CreateServeurDto } from './dto/create.serveur';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 
 @ApiTags('serveur')
 @Controller('serveur')
@@ -28,5 +28,21 @@ export class ServeurController {
   async update(@Param('id') id: string, @Body() updateServeurDto: CreateServeurDto) {
     return this.serveurService.update(Number(id), updateServeurDto);
   }
+
+   @Post('forget-code')
+  @ApiOperation({ summary: 'Réenvoyer le code unique au serveur via email' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        email: { type: 'string', example: 'serveur@example.com' },
+      },
+      required: ['email'],
+    },
+  })
+  forgetCode(@Body('email') email: string) {
+    return this.serveurService.forgetCodeUnique(email);
+  }
+
 
 }
