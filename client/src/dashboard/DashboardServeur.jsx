@@ -1,19 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { io } from "socket.io-client";
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { 
   Coffee, 
   ClipboardList, 
   Plus, 
-  Edit, 
   Trash2, 
   DollarSign, 
-  Users, 
-  Clock,
   CheckCircle,
   AlertTriangle,
   Search,
-  Filter,
   Receipt,
   Menu as MenuIcon,
   Square,
@@ -25,8 +23,8 @@ import axios from 'axios';
 const API_BASE_URL = 'http://localhost:3000';
 
 const DashboardServeur = () => {
-  const serveurId = useParams().id;
-  console.log('Serveur ID:', serveurId);
+  const serveurId = localStorage.getItem("userId");
+  const navigate = useNavigate();
   
   // États principaux
   const [activeTab, setActiveTab] = useState('commandes');
@@ -36,7 +34,7 @@ const DashboardServeur = () => {
   const [tables, setTables] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const navigate = useNavigate();
+  const [notifications, setNotifications] = useState([]);
   
   // États pour les modales
   const [showNewCommandeModal, setShowNewCommandeModal] = useState(false);
@@ -54,32 +52,62 @@ const DashboardServeur = () => {
     navigate('/');
   };
 
-  // Chargement des données initiales
+  // Charger les commandes
+  const fetchCommandes = async () => {  
+    try {
+      const commandesResponse = await axios.get(`${API_BASE_URL}/commandes/serveur/${serveurId}`);
+      setCommandes(commandesResponse.data);
+    } catch (err) {
+      console.error('Erreur chargement commandes:', err);
+    }
+  };
+
+  // Charger les données initiales
+  const fetchData = async () => {
+    try {
+      setLoading(true);  
+      const menusResponse = await axios.get(`${API_BASE_URL}/menus`);
+      setMenus(menusResponse.data);
+      
+      const tablesResponse = await axios.get(`${API_BASE_URL}/carres/${serveurId}`);
+      setTables(tablesResponse.data.tables);
+      
+      const carresResponse = await axios.get(`${API_BASE_URL}/carres/${serveurId}`);
+      setCarres(carresResponse.data);
+      
+      // Charger aussi les commandes
+      await fetchCommandes();
+      
+      setLoading(false);
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        
-        const commandesResponse = await axios.get(`${API_BASE_URL}/commandes/serveur/${serveurId}`);
-        setCommandes(commandesResponse.data);
-        
-        const menusResponse = await axios.get(`${API_BASE_URL}/menus`);
-        setMenus(menusResponse.data);
-        
-        const tablesResponse = await axios.get(`${API_BASE_URL}/carres/${serveurId}`);
-        setTables(tablesResponse.data.tables);
-        
-        const carresResponse = await axios.get(`${API_BASE_URL}/carres/${serveurId}`);
-        setCarres(carresResponse.data);
-        
-        setLoading(false);
-      } catch (err) {
-        setError(err.message);
-        setLoading(false);
-      }
-    };
-    
     fetchData();
+  }, []);
+
+  useEffect(() => {
+    const socket = io(API_BASE_URL, {
+      query: { userId: serveurId },
+    });
+    console.log('Socket.IO connecté pour serveur ID:', serveurId);
+
+    socket.on("notification", (notif) => {
+      console.log('Nouvelle notification reçue:', notif);
+      setNotifications((prev) => [notif, ...prev]);
+      toast.info(notif.message);
+      fetchCommandes();
+    });
+
+    // Demander la permission pour les notifications navigateur
+    if (Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+
+    return () => socket.disconnect();
   }, [serveurId]);
 
   // Calculer les statistiques
@@ -119,9 +147,11 @@ const DashboardServeur = () => {
       
       setCommandes([response.data, ...commandes]);
       setShowNewCommandeModal(false);
+      toast.success('Commande créée avec succès!');
       return true;
     } catch (err) {
       console.error('Erreur lors de la création de la commande:', err);
+      toast.error('Erreur lors de la création de la commande');
       return false;
     }
   };
@@ -139,9 +169,11 @@ const DashboardServeur = () => {
       ));
       
       setShowFactureModal(false);
+      toast.success('Facture créée avec succès!');
       return true;
     } catch (err) {
       console.error('Erreur lors de la création de la facture:', err);
+      toast.error('Erreur lors de la création de la facture');
       return false;
     }
   };
@@ -150,8 +182,6 @@ const DashboardServeur = () => {
   const addplatToCommande = async (commandeId, platId, quantite) => {
     try {
       const _id = Number(commandeId);
-      console.log('Ajout du plat:', platId, 'à la commande:', _id, 'quantité:', quantite);
-
       const response = await axios.post(`${API_BASE_URL}/commandes/${_id}/plats`, [
         {
           produitId: platId,
@@ -166,12 +196,11 @@ const DashboardServeur = () => {
       return true;
     } catch (err) {
       console.error("Erreur lors de l'ajout du plat à la commande:", err);
-      console.error("Réponse de l'erreur:", err.response?.data);
       return false;
     }
   };
 
-  // Modale pour nouvelle commande avec sélection de menu
+  // Modale pour nouvelle commande
   const NewCommandeModal = () => {
     const [selectedTable, setSelectedTable] = useState('');
     const [selectedMenu, setSelectedMenu] = useState(null);
@@ -375,7 +404,7 @@ const DashboardServeur = () => {
     );
   };
 
-  // Modale pour ajouter des articles à une commande existante
+  // Modale pour ajouter des articles
   const AddArticleModal = () => {
     const [selectedPlats, setSelectedPlats] = useState([]);
     const [quantities, setQuantities] = useState({});
@@ -404,6 +433,7 @@ const DashboardServeur = () => {
         setSelectedPlats([]);
         setQuantities({});
         setShowAddArticleModal(false);
+        toast.success('Articles ajoutés avec succès!');
       }
     };
 
@@ -529,14 +559,12 @@ const DashboardServeur = () => {
             <div className="text-sm text-gray-600">
               Serveur: {localStorage.getItem('nom') || 'Inconnu'}
             </div>
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={handleLogout}
-                className="flex items-center bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
-              >
-                <LogOut className="mr-2" size={18} /> Déconnexion
-              </button>
-            </div>
+            <button
+              onClick={handleLogout}
+              className="flex items-center bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
+            >
+              <LogOut className="mr-2" size={18} /> Déconnexion
+            </button>
           </div>
         </div>
       </div>
@@ -622,7 +650,6 @@ const DashboardServeur = () => {
           <div className="p-6">
             {activeTab === 'commandes' && (
               <div>
-                {/* Actions et filtres */}
                 <div className="flex justify-between items-center mb-6">
                   <div className="flex items-center space-x-4">
                     <div className="relative">
@@ -654,7 +681,6 @@ const DashboardServeur = () => {
                   </button>
                 </div>
 
-                {/* Liste des commandes */}
                 <div className="grid gap-4">
                   {filteredCommandes.map(commande => {
                     const total = commande.plats.reduce((sum, plat) => 
@@ -684,7 +710,6 @@ const DashboardServeur = () => {
                           </div>
                         </div>
 
-                        {/* Détail des plats */}
                         <div className="space-y-2 mb-3">
                           {commande.plats.map(plat => (
                             <div key={plat.id} className="flex justify-between items-center text-sm">
@@ -706,7 +731,6 @@ const DashboardServeur = () => {
                           ))}
                         </div>
 
-                        {/* Actions */}
                         <div className="flex justify-end space-x-2">
                           {!commande.facture && (
                             <>
@@ -807,7 +831,6 @@ const DashboardServeur = () => {
         </div>
       </div>
 
-      {/* Modales */}
       {showNewCommandeModal && <NewCommandeModal />}
       {showFactureModal && <FactureModal />}
       {showAddArticleModal && <AddArticleModal />}

@@ -4,10 +4,14 @@ import { CreateCommandeDto } from './dto/create-commande.dto';
 import { UpdatePlatCommandeDto } from './dto/update-commande.dto';
 import { CreatePlatCommandeDto } from './dto/create-plat-commande.dto';
 import { Commande, PlatCommande, EtatPreparation } from '@prisma/client';
+import {NotificationGateway}from '../notification/notification.gateway';
 
 @Injectable()
 export class CommandeService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationGateway :NotificationGateway
+   ) {}
 
   // Créer une nouvelle commande avec ses plats
   async create(createCommandeDto: CreateCommandeDto): Promise<Commande> {
@@ -40,7 +44,7 @@ export class CommandeService {
     }
 
     // Créer la commande avec ses plats en une seule transaction
-    return this.prisma.commande.create({
+    const commande = await  this.prisma.commande.create({
       data: {
         tableId,
         serveurId: Number(serveurId),
@@ -67,6 +71,18 @@ export class CommandeService {
         facture: true
       }
     });
+    
+
+    const cuisiniers = await this.prisma.cuisinier.findFirstOrThrow();
+    const cuisinierId = cuisiniers.id;
+   this.notificationGateway.sendToUser(cuisinierId, {
+      message: `Nouvelle commande #${commande.id} à préparer ! 🍽️`,
+      plats: commande.plats.map(p => p.produit.nom).join(', '),
+      date: new Date().toISOString(),
+});
+
+    console.log(`Notification envoyée au cuisinier #${cuisinierId} : Nouvelle commande #${commande.id} à préparer !`);
+    return commande;
   }
 
   // Récupérer toutes les commandes
@@ -184,7 +200,7 @@ export class CommandeService {
       throw new NotFoundException(`Plat avec ID ${platId} introuvable dans la commande ${commandeId}`);
     }
 
-    return this.prisma.platCommande.update({
+    const updatedPlat= await this.prisma.platCommande.update({
       where: { id: platId },
       data: updateDto,
       include: {
@@ -192,6 +208,20 @@ export class CommandeService {
         commande: true
       }
     });
+    const server = await this.prisma.serveur.findUnique({
+      where: { id: updatedPlat.commande.serveurId }
+    });
+     if (updateDto.etatPreparation === 'PREPARE') {
+    const serveurId = updatedPlat.commande.serveurId;
+    const serveurNom = server?.nom || 'Serveur';
+    const produitNom = updatedPlat.produit.nom;
+    this.notificationGateway.sendToUser(serveurId, `${produitNom} est prêt !`);
+    console.log(`Notification envoyée au serveur #${serveurId} : ${produitNom} est prêt`);
+  }
+
+  return updatedPlat;
+
+
   }
 
   // Calculer le montant total d'une commande avec gestion des formules

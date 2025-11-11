@@ -15,32 +15,35 @@ datasource db {
 }
 
 model Admin {
-  id       Int    @id @default(autoincrement())
-  nom      String
-  email    String @unique
-  password String
+  id            Int            @id @default(autoincrement())
+  nom           String
+  email         String         @unique
+  password      String
+  notifications Notification[]
 }
 
 model Serveur {
-  id        Int        @id @default(autoincrement())
-  nom       String
-  email     String     @unique
-  photoUrl  String?
-  carres    Carre[]
-  commandes Commande[]
-  codeUnique String?  @unique @db.VarChar(8)
+  id            Int            @id @default(autoincrement())
+  nom           String
+  email         String         @unique
+  photoUrl      String?
+  carres        Carre[]
+  commandes     Commande[]
+  codeUnique    String?        @unique @db.VarChar(8)
+  notifications Notification[]
 }
 
 model Cuisinier {
-  id       Int    @id @default(autoincrement())
-  nom      String
-  email    String @unique
-  photoUrl String?
-  codeUnique String?  @unique @db.VarChar(8)
+  id            Int            @id @default(autoincrement())
+  nom           String
+  email         String         @unique
+  photoUrl      String?
+  codeUnique    String?        @unique @db.VarChar(8)
+  notifications Notification[]
 }
 
 model Carre {
-  id        Int     @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   nom       String
   serveurId Int?
   serveur   Serveur? @relation(fields: [serveurId], references: [id])
@@ -99,15 +102,15 @@ model ProduitMenu {
 }
 
 model Produit {
-  id        Int              @id @default(autoincrement())
-  nom       String
-  prix      Float
-  type      ProduitType
-  photoUrl  String?
-  plats     PlatCommande[]
-  menus     ProduitMenu[]
-  contenus  ContenuFormule[] @relation("FormuleContenu") // FORMULE → contenus
-  formules  ContenuFormule[] @relation("ProduitDansFormule") // PRODUIT → appartient à Formule
+  id       Int              @id @default(autoincrement())
+  nom      String
+  prix     Float
+  type     ProduitType
+  photoUrl String?
+  plats    PlatCommande[]
+  menus    ProduitMenu[]
+  contenus ContenuFormule[] @relation("FormuleContenu") // FORMULE → contenus
+  formules ContenuFormule[] @relation("ProduitDansFormule") // PRODUIT → appartient à Formule
 }
 
 model ContenuFormule {
@@ -117,6 +120,24 @@ model ContenuFormule {
   quantite  Int
   formule   Produit @relation("FormuleContenu", fields: [formuleId], references: [id])
   produit   Produit @relation("ProduitDansFormule", fields: [produitId], references: [id])
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  message   String
+  type      String // ex: "COMMANDE", "PLAT", "FACTURE", etc.
+  seen      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  // Relations optionnelles vers les rôles
+  adminId Int?
+  admin   Admin? @relation(fields: [adminId], references: [id])
+
+  serveurId Int?
+  serveur   Serveur? @relation(fields: [serveurId], references: [id])
+
+  cuisinierId Int?
+  cuisinier   Cuisinier? @relation(fields: [cuisinierId], references: [id])
 }
 
 enum ProduitType {

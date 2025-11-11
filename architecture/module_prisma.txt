@@ -118,6 +118,23 @@ model ContenuFormule {
   formule   Produit @relation("FormuleContenu", fields: [formuleId], references: [id])
   produit   Produit @relation("ProduitDansFormule", fields: [produitId], references: [id])
 }
+model Notification {
+  id          Int       @id @default(autoincrement())
+  message     String
+  type        String     // ex: "COMMANDE", "PLAT", "FACTURE", etc.
+  seen        Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+
+  // Relations optionnelles vers les rôles
+  adminId     Int?       
+  admin       Admin?     @relation(fields: [adminId], references: [id])
+
+  serveurId   Int?
+  serveur     Serveur?   @relation(fields: [serveurId], references: [id])
+
+  cuisinierId Int?
+  cuisinier   Cuisinier? @relation(fields: [cuisinierId], references: [id])
+}
 
 enum ProduitType {
   FORMULE

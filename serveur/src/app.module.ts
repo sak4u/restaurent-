@@ -8,9 +8,10 @@ import { ProduitModule } from "./produit/produit.module"
 import { CuisinierModule } from "./cuisinier/cuisinier.module";
 import { FactureModule } from "./facture/facture.module";
 import { AuthModule } from "./auth/auth.module";
+import { NotificationModule } from "./notification/notification.module";
 
 @Module({
     imports: [AdminModule, PrismaModule, ServeurModule,
-        CarreModule, MenuModule, ProduitModule,CuisinierModule,FactureModule, AuthModule],
+        CarreModule, MenuModule, ProduitModule,CuisinierModule,FactureModule, AuthModule, NotificationModule],
 })
 export class AppModule {}
