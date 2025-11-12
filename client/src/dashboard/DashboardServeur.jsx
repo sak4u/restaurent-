@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { io } from "socket.io-client";
-import { toast, ToastContainer } from 'react-toastify';
+import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import notificationSound  from '../sounds/notification-aero-432436.mp3';
+
+
 import { 
   Coffee, 
   ClipboardList, 
@@ -24,6 +27,7 @@ const API_BASE_URL = 'http://localhost:3000';
 
 const DashboardServeur = () => {
   const serveurId = localStorage.getItem("userId");
+  console.log('Serveur ID:', serveurId);
   const navigate = useNavigate();
   
   // États principaux
@@ -46,6 +50,14 @@ const DashboardServeur = () => {
   // États pour les filtres
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+
+
+
+
+  const playNotification = () => {
+    const audio = new Audio(notificationSound);
+    audio.play();
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -98,7 +110,8 @@ const DashboardServeur = () => {
     socket.on("notification", (notif) => {
       console.log('Nouvelle notification reçue:', notif);
       setNotifications((prev) => [notif, ...prev]);
-      toast.info(notif.message);
+      toast.info(notif);
+      playNotification();
       fetchCommandes();
     });
 
@@ -834,6 +847,7 @@ const DashboardServeur = () => {
       {showNewCommandeModal && <NewCommandeModal />}
       {showFactureModal && <FactureModal />}
       {showAddArticleModal && <AddArticleModal />}
+      <ToastContainer position="top-right" autoClose={5000} hideProgressBar />
     </div>
   );
 };

@@ -29,6 +29,8 @@ const AdminDashboard = () => {
 
   const [activeTable, setActiveTable] = useState('');
 
+  const [selectedDate , setSelectedtDate] = useState('');
+
   useEffect(() => {
     fetchServeurs();
     fetchCarres();
@@ -287,7 +289,8 @@ const handleSubmit = (e) => {
             <th>ID</th>
             <th>Nom</th>
             <th>Email</th>
-            <th className="text-right">Chiffre d'Affaires</th>
+            <th>Code unique</th>
+            <th>Chiffre d'Affaires</th>
             <th>Action</th>
           </tr>
         </thead>
@@ -298,7 +301,7 @@ const handleSubmit = (e) => {
               <td>{s.nom}</td>
               <td>{s.email}</td>
               <td>{s.codeUnique}</td>
-              <td className="text-right font-medium">
+              <td >
                 {s.chiffreAffaires?.toFixed(2) || '0.00'} TND
               </td>
               <td>
@@ -379,6 +382,7 @@ const handleSubmit = (e) => {
                 <th>ID</th>
                 <th>Nom</th>
                 <th>Email</th>
+                <th>Code unique</th>
                 <th>Action</th>
               </tr>
             </thead>
@@ -415,36 +419,80 @@ const handleSubmit = (e) => {
       );
     }
     if (activeTable === 'commande') {
-      return (
-        <div className="bg-white p-4 rounded shadow overflow-auto max-h-[400px]">
-          <h2 className="text-lg font-semibold mb-4">Liste des Commandes</h2>
-          <table className="w-full text-left text-sm">
-            <thead className="border-b">
-              <tr>
-                <th>#ID</th>
-                <th>Serveur</th>
-                <th>Table</th>
-                <th>Plats</th>
-                <th>Montant</th>
-                <th>Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {commandes.map((cmd) => (
-                <tr key={cmd.id} className="border-b hover:bg-gray-100">
-                  <td>{cmd.id}</td>
-                  <td>{cmd.serveur?.nom}</td>
-                  <td>{cmd.table ? `Table ${cmd.table.numero}` : ''}</td>
-                  <td>{cmd.plats.map((p) => `${p.produit.nom} x${p.quantite}`).join(', ')}</td>
-                  <td>{cmd.facture?.montant || 0} TND</td>
-                  <td>{new Date(cmd.createdAt).toLocaleString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+  // 🔹 Filtrer les commandes selon la date choisie
+  const filteredCommandes = commandes.filter((cmd) => {
+    if (!selectedDate) return true; // si aucune date → tout afficher
+    const cmdDate = new Date(cmd.createdAt);
+    const filterDate = new Date(selectedDate);
+
+    return (
+      cmdDate.getFullYear() === filterDate.getFullYear() &&
+      cmdDate.getMonth() === filterDate.getMonth() &&
+      cmdDate.getDate() === filterDate.getDate()
+    );
+  });
+
+  return (
+    <div className="bg-white p-4 rounded shadow overflow-auto max-h-[500px]">
+      <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-2">
+        <h2 className="text-lg font-semibold">Liste des Commandes</h2>
+
+        <div className="flex items-center gap-2">
+          <label className="text-sm text-gray-600">Filtrer par date :</label>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedtDate(e.target.value)}
+            className="border rounded p-1 text-sm"
+          />
+          {selectedDate && (
+            <button
+              onClick={() => setSelectedtDate('')}
+              className="text-xs text-red-600 underline"
+            >
+              Réinitialiser
+            </button>
+          )}
         </div>
-      );
-    }
+      </div>
+
+      <table className="w-full text-left text-sm">
+        <thead className="border-b bg-gray-100">
+          <tr>
+            <th>#ID</th>
+            <th>Serveur</th>
+            <th>Table</th>
+            <th>Plats</th>
+            <th>Montant</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filteredCommandes.length > 0 ? (
+            filteredCommandes.map((cmd) => (
+              <tr key={cmd.id} className="border-b hover:bg-gray-50">
+                <td>{cmd.id}</td>
+                <td>{cmd.serveur?.nom}</td>
+                <td>{cmd.table ? `Table ${cmd.table.numero}` : ''}</td>
+                <td>
+                  {cmd.plats.map((p) => `${p.produit.nom} x${p.quantite}`).join(', ')}
+                </td>
+                <td>{cmd.facture?.montant || 0} TND</td>
+                <td>{new Date(cmd.createdAt).toLocaleString()}</td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="6" className="text-center text-gray-500 py-3">
+                Aucune commande trouvée pour cette date.
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+  }
     return null;
   };
 
