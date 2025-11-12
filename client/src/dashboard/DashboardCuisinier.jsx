@@ -43,16 +43,15 @@ const CuisinierDashboard = () => {
   // Initialiser socket
   useEffect(() => {
     fetchCommandes();
-    if (!cuisinierId) return;
-
-    const socket = io("http://localhost:3000", { query: { userId: cuisinierId } });
-
+    const socket = io("http://localhost:3000", { 
+      query: { userId: cuisinierId }
+     });
     console.log("👨‍🍳 Socket connecté (Cuisinier)", cuisinierId);
 
     socket.on("notification", (notif) => {
       toast(`🍽️ ${notif}`);
       console.log("🔔 Notification reçue:", notif);
-      if (notif.type === "new_commande" && notif.message && notif.message.trim()) {
+      if (notif.type === "new_commande" && notif) {
         const newNotif = {
           id: Date.now(),
           message: notif.message,
@@ -62,9 +61,10 @@ const CuisinierDashboard = () => {
         };
         setNotifications((prev) => [newNotif, ...prev].slice(0, 20));
         toast.info(`🍽️ ${notif}`);
+        new audio('../../public/notification.mp3').play();
         fetchCommandes();
       }else {
-      console.warn("🔇 Notification ignorée (contenu vide) :", notif);
+      console.log("🔇 Notification ignorée (contenu vide) :", notif);
     }
     });
 

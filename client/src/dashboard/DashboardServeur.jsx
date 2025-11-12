@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { io } from "socket.io-client";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import notificationSound  from '../sounds/notification-aero-432436.mp3';
+import notsound from '../../public/notification.mp3';
 
 
 import { 
@@ -54,10 +54,7 @@ const DashboardServeur = () => {
 
 
 
-  const playNotification = () => {
-    const audio = new Audio(notificationSound);
-    audio.play();
-  };
+ 
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -111,7 +108,7 @@ const DashboardServeur = () => {
       console.log('Nouvelle notification reçue:', notif);
       setNotifications((prev) => [notif, ...prev]);
       toast.info(notif);
-      playNotification();
+      new Audio(notsound).play();
       fetchCommandes();
     });
 
