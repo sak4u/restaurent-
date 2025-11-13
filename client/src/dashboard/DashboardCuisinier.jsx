@@ -5,6 +5,7 @@ import { Clock, LogOut, Bell, History, X, ChefHat } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import notsound from '../../public/notification.mp3';
 
 const CuisinierDashboard = () => {
   const [commandes, setCommandes] = useState([]);
@@ -49,9 +50,9 @@ const CuisinierDashboard = () => {
     console.log("👨‍🍳 Socket connecté (Cuisinier)", cuisinierId);
 
     socket.on("notification", (notif) => {
-      toast(`🍽️ ${notif}`);
+      toast(`🍽️!!! ${notif}`);
       console.log("🔔 Notification reçue:", notif);
-      if (notif.type === "new_commande" && notif) {
+      if (notif) {
         const newNotif = {
           id: Date.now(),
           message: notif.message,
@@ -61,7 +62,7 @@ const CuisinierDashboard = () => {
         };
         setNotifications((prev) => [newNotif, ...prev].slice(0, 20));
         toast.info(`🍽️ ${notif}`);
-        new audio('../../public/notification.mp3').play();
+        new Audio(notsound).play();
         fetchCommandes();
       }else {
       console.log("🔇 Notification ignorée (contenu vide) :", notif);

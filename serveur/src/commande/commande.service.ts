@@ -75,12 +75,8 @@ export class CommandeService {
 
     const cuisiniers = await this.prisma.cuisinier.findFirstOrThrow();
     const cuisinierId = cuisiniers.id;
-   this.notificationGateway.sendToUser(cuisinierId, {
-      message: `Nouvelle commande #${commande.id} à préparer ! 🍽️`,
-      plats: commande.plats.map(p => p.produit.nom).join(', '),
-      date: new Date().toISOString(),
-});
-
+    console.log(`Envoi de la notification au cuisinier #${cuisinierId} pour la commande #${commande.id}`);
+    this.notificationGateway.sendToUser(cuisinierId,'Nouvelle commande à préparer ! 🍽');
     console.log(`Notification envoyée au cuisinier #${cuisinierId} : Nouvelle commande #${commande.id} à préparer !`);
     return commande;
   }
@@ -213,7 +209,6 @@ export class CommandeService {
     });
      if (updateDto.etatPreparation === 'PREPARE') {
     const serveurId = updatedPlat.commande.serveurId;
-    const serveurNom = server?.nom || 'Serveur';
     const produitNom = updatedPlat.produit.nom;
     this.notificationGateway.sendToUser(serveurId, `${produitNom} est prêt !`);
     console.log(`Notification envoyée au serveur #${serveurId} : ${produitNom} est prêt`);

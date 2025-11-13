@@ -566,8 +566,8 @@ const DashboardServeur = () => {
               <Coffee className="h-8 w-8 text-blue-600" />
               <h1 className="text-2xl font-bold text-gray-900">Dashboard Serveur</h1>
             </div>
-            <div className="text-sm text-gray-600">
-              Serveur: {localStorage.getItem('nom') || 'Inconnu'}
+            <div className="text-1g text-gray-800 font-medium mr-4">
+              Bonjour  {localStorage.getItem('nom') || 'Inconnu'}
             </div>
             <button
               onClick={handleLogout}
