@@ -21,23 +21,23 @@ jobs:
           cache: 'npm' # Enable caching, but we'll handle directories manually
 
       - name: Install dependencies (backend)
-        working-directory: ./serveur
+        working-directory: ./restaurent/serveur
         run: npm install 
 
       - name: Generate Prisma client (backend)
-        working-directory: ./serveur
+        working-directory: ./restaurent/serveur
         run: npx prisma generate
 
       - name: Run backend tests
-        working-directory: ./serveur
+        working-directory: ./restaurent/serveur
         run: npm test || echo "Tests failed but continuing"
 
       - name: Install dependencies (frontend)
-        working-directory: ./client
+        working-directory: ./restaurent/client
         run: npm install
 
       - name: Build frontend
-        working-directory: ./client
+        working-directory: ./restaurent/client
         run: npm run build
 
       - name: Set up Docker Buildx
