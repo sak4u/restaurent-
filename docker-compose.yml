@@ -1,6 +1,6 @@
 services:
   # ==========================
-  # Backend NestJS
+  # Backend NestJSJJ
   # ==========================
   backend:
     build: ./backend
