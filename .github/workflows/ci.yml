@@ -18,26 +18,27 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '20'
-          cache: 'npm' # Enable caching, but we'll handle directories manually
+          # Disable cache at root level since lock files are in subdirectories
+          cache: 'ignore' # Temporarily disable cache to avoid the error
 
       - name: Install dependencies (backend)
-        working-directory: ./restaurent/serveur
-        run: npm install 
+        working-directory: ./serveur
+        run: npm install --legacy-peer-deps
 
       - name: Generate Prisma client (backend)
-        working-directory: ./restaurent/serveur
+        working-directory: ./serveur
         run: npx prisma generate
 
       - name: Run backend tests
-        working-directory: ./restaurent/serveur
+        working-directory: ./serveur
         run: npm test || echo "Tests failed but continuing"
 
       - name: Install dependencies (frontend)
-        working-directory: ./restaurent/client
+        working-directory: ./client
         run: npm install
 
       - name: Build frontend
-        working-directory: ./restaurent/client
+        working-directory: ./client
         run: npm run build
 
       - name: Set up Docker Buildx
