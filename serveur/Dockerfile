@@ -1,48 +1,38 @@
-# --------------------------
-# Étape 1 : Construction
-# --------------------------
+# Stage 1: Build
 FROM node:20-alpine AS builder
 
-# Créer le dossier de travail
 WORKDIR /app
 
-# Copier uniquement les fichiers de dépendances d'abord
+# Copier les fichiers de dépendances
 COPY package*.json ./
+COPY prisma ./prisma/
 
-# Installer toutes les dépendances (y compris dev)
-RUN npm install
+# Installer les dépendances
+RUN npm install --legacy-peer-deps
 
-# Copier le reste du code source
+# Copier le code source
 COPY . .
+COPY tsconfig*.json ./
 
-# Générer le client Prisma (nécessaire avant le build)
+# Générer le client Prisma
 RUN npx prisma generate
 
-# Compiler le code TypeScript
+# Compiler TypeScript
 RUN npm run build
 
+# Stage 2: Production
+FROM node:20-alpine
 
-# --------------------------
-# Étape 2 : Exécution
-# --------------------------
-FROM node:20-alpine AS runner
-
-# Créer le dossier de travail
 WORKDIR /app
 
-# Copier uniquement ce qui est nécessaire pour exécuter l'app
-COPY --from=builder /app/dist ./dist
+# Copier les fichiers nécessaires depuis le builder
 COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/prisma ./prisma/
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
 
-# Installer uniquement les dépendances de production
-RUN npm install --only=production
-
-# Regénérer le client Prisma pour l'environnement de prod
-RUN npx prisma generate
-
-# Exposer le port utilisé par NestJS
+# Exposer le port
 EXPOSE 3000
 
-# Commande de démarrage
-CMD ["npm", "run", "start:prod"]
+# Démarrer l'application
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/src/main.js"]
