@@ -1,43 +1,35 @@
 services:
-  # ==========================
-  # Backend NestJS
-  # ==========================
   backend:
     build:
       context: ./serveur
       dockerfile: Dockerfile
     container_name: serveur
     environment:
-      - DATABASE_URL=${DATABASE_URL} # URL de ta base Prisma en ligne
+      - DATABASE_URL=${DATABASE_URL}
     ports:
       - "${BACKEND_PORT:-3000}:3000"
     networks:
       - restaurant-net
-    command: >
-      sh -c "npx prisma migrate deploy &&
-             node dist/main.js"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       interval: 30s
       timeout: 3s
       retries: 3
 
-  # ==========================
-  # Frontend React
-  # ==========================
   frontend:
     build:
-      context: ./client
+      context: ./client          # <-- contexte = dossier client
       dockerfile: Dockerfile
     container_name: client
     ports:
-      - "${FRONTEND_PORT:-5173}:5173"  
+      - "${FRONTEND_PORT:-5173}:80"   # Nginx écoute sur 80
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - restaurant-net
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5173"]
+      test: ["CMD", "curl", "-f", "http://localhost"]
       interval: 30s
       timeout: 3s
       retries: 3
