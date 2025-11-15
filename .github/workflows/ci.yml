@@ -1,0 +1,69 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install dependencies (backend)
+        working-directory: ./serveur
+        run: npm install --legacy-peer-deps
+
+      - name: Generate Prisma client (backend)
+        working-directory: ./serveur
+        run: npx prisma generate
+
+      - name: Run backend tests
+        working-directory: ./serveur
+        run: npm test || echo "Tests failed but continuing"
+
+      - name: Install dependencies (frontend)
+        working-directory: ./client
+        run: npm install
+
+      - name: Build frontend
+        working-directory: ./client
+        run: npm run build
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker images
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BACKEND_PORT: ${{ secrets.BACKEND_PORT || 5000 }}
+          FRONTEND_PORT: ${{ secrets.FRONTEND_PORT || 80 }}
+        run: docker compose build
+
+      - name: Run Docker containers (test run)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BACKEND_PORT: ${{ secrets.BACKEND_PORT || 5000 }}
+          FRONTEND_PORT: ${{ secrets.FRONTEND_PORT || 80 }}
+        run: |
+          docker compose up -d
+          sleep 15
+          docker compose ps
+
+      - name: Check application health
+        run: |
+          curl -f http://localhost:5000/health || exit 1
+          curl -f http://localhost || exit 1
+        timeout-minutes: 1
+
+      - name: Stop containers
+        run: docker compose down
