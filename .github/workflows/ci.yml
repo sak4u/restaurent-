@@ -18,8 +18,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '20'
-          # Disable cache at root level since lock files are in subdirectories
-          cache: 'ignore' # Temporarily disable cache to avoid the error
+          # Removed 'cache' to avoid lock file check at root
 
       - name: Install dependencies (backend)
         working-directory: ./serveur
