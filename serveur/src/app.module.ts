@@ -9,8 +9,9 @@ import { CuisinierModule } from "./cuisinier/cuisinier.module";
 import { FactureModule } from "./facture/facture.module";
 import { AuthModule } from "./auth/auth.module";
 import { NotificationModule } from "./notification/notification.module";
-
+import { AppController } from "./app.controller";
 @Module({
+    controllers: [AppController],
     imports: [AdminModule, PrismaModule, ServeurModule,
         CarreModule, MenuModule, ProduitModule,CuisinierModule,FactureModule, AuthModule, NotificationModule],
 })
