@@ -1,0 +1,78 @@
+name: CI Pipeline (Frontend + Backend)
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-frontend:
+    name: Build React (Vite)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm install
+
+      - name: Run tests
+        working-directory: ./frontend
+        run: |
+          if [ -f "package.json" ] && grep -q "test" package.json; then
+            npm test -- --watchAll=false
+          else
+            echo "No tests found - skipping"
+          fi
+
+      - name: Build Vite app
+        working-directory: ./frontend
+        run: npm run build
+
+      - name: Build Docker image (Frontend)
+        run: docker build -t myapp-frontend:latest ./frontend
+
+  build-backend:
+    name: Build NestJS API
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        working-directory: ./backend
+        run: npm install --legacy-peer-deps
+
+      - name: Generate Prisma Client
+        working-directory: ./backend
+        run: npx prisma generate
+
+      - name: Run tests
+        working-directory: ./backend
+        run: |
+          if [ -f "package.json" ] && grep -q "test" package.json; then
+            npm test
+          else
+            echo "No tests found - skipping"
+          fi
+
+      - name: Build NestJS
+        working-directory: ./backend
+        run: npm run build
+
+      - name: Build Docker image (Backend)
+        run: docker build -t myapp-backend:latest ./backend
