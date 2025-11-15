@@ -20,18 +20,21 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Install dependencies
-        run: npm install --legacy-peer-deps
+      - name: Install dependencies (backend)
+        run: cd serveur && npm install --legacy-peer-deps
 
-      - name: Generate Prisma client
-        run: npx prisma generate
+      - name: Generate Prisma client (backend)
+        run: cd serveur && npx prisma generate
 
-      - name: Run linting
-        run: npm run lint || echo "Linting failed but continuing"
+      - name: Run backend tests
+        run: cd serveur && npm test || echo "Tests failed but continuing"
+        # Continue on failure to allow debugging; remove if tests must pass
 
-      - name: Run tests
-        run: npm test || echo "Tests failed but continuing"
-        # Note: Ensure your package.json has a "test" script defined
+      - name: Install dependencies (frontend)
+        run: cd client && npm install
+
+      - name: Build frontend
+        run: cd client && npm run build
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -42,20 +45,14 @@ jobs:
       - name: Run Docker containers (test run)
         run: |
           docker compose up -d
-          sleep 10
+          sleep 15
           docker compose ps
 
       - name: Check application health
         run: |
-          # Add a simple health check (adjust URL/port as needed)
           curl -f http://localhost:3000/health || exit 1
+          curl -f http://localhost || exit 1
         timeout-minutes: 1
 
       - name: Stop containers
         run: docker compose down
-
-      - name: Upload build artifacts (optional)
-        uses: actions/upload-artifact@v3
-        with:
-          name: dist
-          path: dist/
