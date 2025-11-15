@@ -6,7 +6,7 @@ services:
     build:
       context: ./serveur
       dockerfile: Dockerfile
-    container_name: restaurant_backend
+    container_name: serveur
     environment:
       - DATABASE_URL=${DATABASE_URL} # URL de ta base Prisma en ligne
     ports:
@@ -29,15 +29,15 @@ services:
     build:
       context: ./client
       dockerfile: Dockerfile
-    container_name: restaurant_frontend
+    container_name: client
     ports:
-      - "${FRONTEND_PORT:-80}:80"  # Aligné avec Nginx, ajustez si dev avec 5173
+      - "${FRONTEND_PORT:-5173}:5173"  
     depends_on:
       - backend
     networks:
       - restaurant-net
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost"]
+      test: ["CMD", "curl", "-f", "http://localhost:5173"]
       interval: 30s
       timeout: 3s
       retries: 3

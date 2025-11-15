@@ -34,8 +34,8 @@ COPY --from=build /app/dist /usr/share/nginx/html
 # Si tu veux gérer les routes React (ex: react-router-dom)
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Expose le port 80
-EXPOSE 80
+# Expose le port 5173
+EXPOSE 5173
 
 # Lance Nginx
 CMD ["nginx", "-g", "daemon off;"]
