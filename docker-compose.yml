@@ -1,9 +1,9 @@
 services:
   backend:
+    container_name: serveur
     build:
       context: ./serveur
       dockerfile: Dockerfile
-    container_name: serveur
     environment:
       - DATABASE_URL=${DATABASE_URL}
     ports:
@@ -11,28 +11,32 @@ services:
     networks:
       - restaurant-net
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
-      interval: 30s
-      timeout: 3s
-      retries: 3
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12          # ~ 2 min d’attente max
+      start_period: 5s
+    command: >
+      sh -c "npx prisma migrate deploy && node dist/src/main.js"
 
   frontend:
-    build:
-      context: ./client          # <-- contexte = dossier client
-      dockerfile: Dockerfile
     container_name: client
+    build:
+      context: ./client
+      dockerfile: Dockerfile
     ports:
-      - "${FRONTEND_PORT:-5173}:80"   # Nginx écoute sur 80
+      - "${FRONTEND_PORT:-5173}:80"
     depends_on:
       backend:
         condition: service_healthy
     networks:
       - restaurant-net
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost"]
-      interval: 30s
-      timeout: 3s
-      retries: 3
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 5s
 
 networks:
   restaurant-net:
