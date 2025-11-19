@@ -113,6 +113,4 @@ jobs:
           done
           exit 1
 
-      - name: Stop containers
-        if: always()
-        run: docker compose down -v
+     
